@@ -1,7 +1,7 @@
 import os
 
 def _intlit(b: bytes) -> int:
-    return int.from_bytes(b, "little")
+    return int.from_bytes(b, byteorder="little")
 
 def _writeint(num, size):
     return num.to_bytes(size, byteorder="little")
@@ -45,27 +45,25 @@ def extractDat():
 
         os.makedirs(f"{outFolder}\\{fileDir}", exist_ok="true")
 
-        file = open(f"{outFolder}\\{filePath}", "wb")
+        file = open(f"{outFolder}\\{filePath}", "w+b")
         file.write(fileData)
-        
-        if fileName.endswith(".PKM"):
-            
-            pkm = open(f"{outFolder}\\{filePath}", "r+b")
-            pkm.seek(0)
-            
-            magic = pkm.read(2)
-            print(magic)
-            continue
 
-            if magic != PKM_MAGIC:
-                print(f"{filePath} has Invalid Magic Number! {magic}")
-                continue
-                
+        file.seek(0)
+        header = file.read(2)
+        
+        if header == PKM_MAGIC:
+            print(fileName)
+            
+            pkm = open(f"{outFolder}\\{filePath}", "rb")
+            pkm.seek(0)
+            magic = pkm.read(2)    
             unknown1 = _intlit(pkm.read(2))
             pkmFileCount = _intlit(pkm.read(4))
             unknown2 = _intlit(pkm.read(4))
             unknown3 = _intlit(pkm.read(2))
-            unknown4 = _intlit(pkm.read(2)) 
+            unknown4 = _intlit(pkm.read(2))
+            print(pkmFileCount)
+            print(f"{pkm.tell():X}")
 
             pkmFiles = []
 
@@ -82,7 +80,7 @@ def extractDat():
                 pkmFiles.append([pkmFilePath, 0, offset, size])
                 
 
-            while(pkm.tell()%64 !=0):
+            while((pkm.tell() % 64) != 0):
                 pkm.read(1)
             start = pkm.tell()
 
