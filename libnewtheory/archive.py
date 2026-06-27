@@ -74,8 +74,8 @@ def extractDat():
                 pkmFilePath = pkm.read(256).decode(encoding="utf-8", errors="backslashreplace")
                 pkmFilePath = pkmFilePath[:pkmFilePath.find("\x00")]
 
-                offset = int.from_bytes(pkm.read(4), byteorder="little")
-                size = int.from_bytes(pkm.read(4), byteorder="little")
+                offset = _intlit(pkm.read(4))
+                size = _intlit(pkm.read(4))
 
                 pkmFiles.append([pkmFilePath, 0, offset, size])
                 
@@ -102,8 +102,65 @@ def extractDat():
                 newFile.write(newFileData)
 
         else:
-            log.write(f"{filePath} {offset} {size}\n")        
+            log.write(f"{filePath} {offset} {size}\n")
+
+def buildDat():
+    log = open("DAT.txt", "r", encoding="utf-8")
+    pak = open("DAT.PAK", "w+b")
+    pki = open("DAT.PKI", "w+b")
+    outFolder = "DAT"
+    current = 0
+
+    pkiInfo = log.readline().split()
+    print(pkiInfo)
+    pki.write(PKM_MAGIC)   
+    pki.write(_writeint(int(pkiInfo[1]), 2))
+    pki.write(_writeint(int(pkiInfo[0]), 4))
+    pki.write(_writeint(int(pkiInfo[2]), 4))
+    pki.write(_writeint(int(pkiInfo[3]), 2))
+    pki.write(_writeint(int(pkiInfo[4]), 2))
+    
+    for i in range(int(pkiInfo[0])):
+        fileinfo = log.readline().rstrip("\n").split()
+        name = fileinfo[0]
+        file = open(f"{outFolder}\\{name}", "rb")
+        data = file.read()
+        size = len(data)
+
+        if name.endswith(".PKM") == False:
+            print(name)
+
+
+        else:
+            fileCount = int(fileinfo[1])
+            print(name)
+            for j in range(fileCount):
+                print(log.readline().rstrip("\n"))
+        
+        pki.write(name.encode(encoding="utf-8"))
+        padding = (256 - (len(name) % 256))
+        pki.write(bytes(padding))
+
+
+
+        pki.write(_writeint(current, 4))
+
+        pki.write(_writeint(size, 4))
+        
+
+        current = current + size
+
+        if ((current % 0x800) == 0):
+            padding = 0
+        else:
+            padding = (0x800 - (current % 0x800))
+        current = current + padding
+
+        pak.write(data)
+        pak.write(bytes(padding))
 
 def unpack():
     extractDat()
-    
+
+def pack():
+    buildDat()
