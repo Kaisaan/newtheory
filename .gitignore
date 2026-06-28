@@ -1,0 +1,16 @@
+__pycache__
+*.pyc
+newtheory.xml
+translated.xml
+newtheory_secret.json
+.DS_Store
+newtheory.iso
+DATA.txt
+extracted/
+/DATA/
+translated/
+decompiled/
+/csv/
+/font/
+graphics/orig
+asm/strings.asm

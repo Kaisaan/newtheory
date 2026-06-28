@@ -20,8 +20,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 PATCHED_ISO = "english.iso"
 
 
-
-
 def generate_translated_xml(in_xml: str, out_xml: str):
     """
     Rewrite every source="extracted/..." in the ISO project XML to point
@@ -53,12 +51,13 @@ def main():
     print("Rebuilding ISO...")
     subprocess.run(
         [
-            "mkps2iso.exe",
+            "mkps2iso",
             "-y",
             "-o",
             PATCHED_ISO,
             "translated.xml",
-        ]
+        ],
+        check=True,
     )
     print(f"Patched ISO saved to {PATCHED_ISO}")
 

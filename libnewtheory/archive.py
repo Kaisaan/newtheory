@@ -8,6 +8,9 @@ def _writeint(num, size):
 
 PKM_MAGIC = b"xf"
 
+def _native_path(path: str) -> str:
+    return path.replace("\\", os.sep)
+
 def extractDat():
     pak = open("extracted/DAT.PAK", "rb")
     pki = open("extracted/DAT.PKI", "rb")
@@ -33,6 +36,7 @@ def extractDat():
     for _ in range(fileCount):
         filePath = pki.read(256).decode(encoding="utf-8", errors="backslashreplace")
         filePath = filePath[:filePath.find("\x00")]
+        filePath = _native_path(filePath)
 
         fileName = os.path.split(filePath)[1]
         fileDir = os.path.split(filePath)[0]
@@ -43,9 +47,9 @@ def extractDat():
         pak.seek(offset)
         fileData = pak.read(size)
 
-        os.makedirs(f"{outFolder}\\{fileDir}", exist_ok="true")
+        os.makedirs(os.path.join(outFolder, fileDir), exist_ok=True)
 
-        file = open(f"{outFolder}\\{filePath}", "w+b")
+        file = open(os.path.join(outFolder, filePath), "w+b")
         file.write(fileData)
 
         file.seek(0)
@@ -54,7 +58,7 @@ def extractDat():
         if header == PKM_MAGIC:
             print(fileName)
             
-            pkm = open(f"{outFolder}\\{filePath}", "rb")
+            pkm = open(os.path.join(outFolder, filePath), "rb")
             pkm.seek(0)
             magic = pkm.read(2)    
             unknown1 = _intlit(pkm.read(2))
@@ -73,6 +77,7 @@ def extractDat():
             
                 pkmFilePath = pkm.read(256).decode(encoding="utf-8", errors="backslashreplace")
                 pkmFilePath = pkmFilePath[:pkmFilePath.find("\x00")]
+                pkmFilePath = _native_path(pkmFilePath)
 
                 offset = _intlit(pkm.read(4))
                 size = _intlit(pkm.read(4))
@@ -94,11 +99,11 @@ def extractDat():
                 newFileName = os.path.split(pkmFiles[i][0])[1]
                 newFileDir = os.path.split(pkmFiles[i][0])[0]
 
-                os.makedirs(f"{outFolder}\\{newFileDir}", exist_ok="true")
+                os.makedirs(os.path.join(outFolder, newFileDir), exist_ok=True)
 
                 newFileData = pkm.read(pkmFiles[i][3])
 
-                newFile = open(f"{outFolder}\\{newFileDir}\\{newFileName}", "wb")
+                newFile = open(os.path.join(outFolder, newFileDir, newFileName), "wb")
                 newFile.write(newFileData)
 
         else:
@@ -123,7 +128,7 @@ def buildDat():
     for i in range(int(pkiInfo[0])):
         fileinfo = log.readline().rstrip("\n").split()
         name = fileinfo[0]
-        file = open(f"{outFolder}\\{name}", "rb")
+        file = open(os.path.join(outFolder, _native_path(name)), "rb")
         data = file.read()
         size = len(data)
 
