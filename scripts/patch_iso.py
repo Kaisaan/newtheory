@@ -15,6 +15,7 @@ from xml.etree import ElementTree as ET
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 #sys.path.insert(0, str(Path(__file__).resolve().parent))
+from libnewtheory.archive import pack
 
 
 PATCHED_ISO = "english.iso"
@@ -37,7 +38,7 @@ def main():
 
 
     print("Repacking DATA.BIN...")
-
+    pack()
     print("Done!")
 
     print("Applying SLPM patches with armips...")

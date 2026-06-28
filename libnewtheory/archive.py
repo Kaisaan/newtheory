@@ -112,8 +112,8 @@ def extractDat():
 
 def buildDat():
     log = open("DAT.txt", "r", encoding="utf-8")
-    pak = open("DAT.PAK", "w+b")
-    pki = open("DAT.PKI", "w+b")
+    pak = open("translated\\DAT.PAK", "w+b")
+    pki = open("translated\\DAT.PKI", "w+b")
     outFolder = "DAT"
     current = 0
 
