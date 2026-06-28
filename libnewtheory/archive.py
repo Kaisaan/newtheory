@@ -1,13 +1,4 @@
-import os, hashlib
-
-def getHash(file_path):
-    hashFile = hashlib.new("md5")
-    
-    with open(file_path, 'rb') as file:
-        while chunk := file.read(8192):
-            hashFile.update(chunk)
-    
-    return(hashFile.hexdigest())
+import os
 
 def _intlit(b: bytes) -> int:
     return int.from_bytes(b, byteorder="little")
@@ -89,11 +80,15 @@ def extractDat():
                 size = _intlit(pkm.read(4))
 
                 pkmFiles.append([pkmFilePath, 0, offset, size])
-                
+            
+            pos = pkm.tell()
+            
 
-            while((pkm.tell() % 64) != 0):
-                pkm.read(1)
-            start = pkm.tell()
+            if((pos % 64 ) == 0):
+                start = pos + 64
+
+            else:
+                start = (64 - (pos % 64)) + pos
 
             for i in range(pkmFileCount):
 
@@ -136,8 +131,9 @@ def buildDat():
         name = fileinfo[0]
 
         if name.endswith(".PKM") == True:
+
             fileCount = int(fileinfo[1])
-            new = open(os.path.join(outFolder, _native_path(f"{name}.NEW")), "w+b")
+            new = open(os.path.join(outFolder, _native_path(f"{name}")), "w+b")
             new.write(PKM_MAGIC)
             new.write(_writeint(int(fileinfo[4]), 2))
             new.write(_writeint(fileCount, 4))
@@ -158,8 +154,6 @@ def buildDat():
                 padding = (256 - (len(pkmName) % 256))
                 new.write(bytes(padding))
 
-
-
                 new.write(_writeint(pkmCurrent, 4))
 
                 new.write(_writeint(pkmSize, 4))
@@ -178,7 +172,7 @@ def buildDat():
 
             end = new.tell()
             if ((end % 64) == 0):
-                padding = 0
+                padding = 64
             else:
                 padding = (64 - (end % 64))
             
@@ -190,15 +184,9 @@ def buildDat():
                 new.write(data)
                 new.write(bytes(pkmData[k][1]))
             
+            
             new.close()
             
-            oldhash = getHash(os.path.join(outFolder, _native_path(f"{name}.NEW")))
-            newhash = getHash(os.path.join(outFolder, _native_path(f"{name}")))
-
-            if (oldhash == newhash):
-                pass
-            else:
-                print(f"{name} is not rebuilt {oldhash} VS {newhash}")
 
 
         file = open(os.path.join(outFolder, _native_path(name)), "rb")
@@ -208,8 +196,6 @@ def buildDat():
         pki.write(name.encode(encoding="utf-8"))
         padding = (256 - (len(name) % 256))
         pki.write(bytes(padding))
-
-
 
         pki.write(_writeint(current, 4))
 
@@ -232,12 +218,3 @@ def unpack():
 
 def pack():
     buildDat()
-    print(getHash("DAT.PAK"))
-    print(getHash("extracted\\DAT.PAK"))
-    print(getHash("DAT.PKI"))
-    print(getHash("extracted\\DAT.PKI"))
-
-    if ((getHash("DAT.PAK")) == (getHash("extracted\\DAT.PAK"))):
-        print("same pak")
-    else:
-        print("not same")
