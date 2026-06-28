@@ -1,4 +1,13 @@
-import os
+import os, hashlib
+
+def getHash(file_path):
+    hashFile = hashlib.new("md5")
+    
+    with open(file_path, 'rb') as file:
+        while chunk := file.read(8192):
+            hashFile.update(chunk)
+    
+    return(hashFile.hexdigest())
 
 def _intlit(b: bytes) -> int:
     return int.from_bytes(b, byteorder="little")
@@ -56,7 +65,6 @@ def extractDat():
         header = file.read(2)
         
         if header == PKM_MAGIC:
-            print(fileName)
             
             pkm = open(os.path.join(outFolder, filePath), "rb")
             pkm.seek(0)
@@ -66,8 +74,6 @@ def extractDat():
             unknown2 = _intlit(pkm.read(4))
             unknown3 = _intlit(pkm.read(2))
             unknown4 = _intlit(pkm.read(2))
-            print(pkmFileCount)
-            print(f"{pkm.tell():X}")
 
             pkmFiles = []
 
@@ -117,7 +123,7 @@ def buildDat():
     current = 0
 
     pkiInfo = log.readline().split()
-    print(pkiInfo)
+
     pki.write(PKM_MAGIC)   
     pki.write(_writeint(int(pkiInfo[1]), 2))
     pki.write(_writeint(int(pkiInfo[0]), 4))
@@ -128,20 +134,77 @@ def buildDat():
     for i in range(int(pkiInfo[0])):
         fileinfo = log.readline().rstrip("\n").split()
         name = fileinfo[0]
+
+        if name.endswith(".PKM") == True:
+            fileCount = int(fileinfo[1])
+            new = open(os.path.join(outFolder, _native_path(f"{name}.NEW")), "w+b")
+            new.write(PKM_MAGIC)
+            new.write(_writeint(int(fileinfo[4]), 2))
+            new.write(_writeint(fileCount, 4))
+            new.write(_writeint(int(fileinfo[5]), 4))
+            new.write(_writeint(int(fileinfo[6]), 2))
+            new.write(_writeint(int(fileinfo[7]), 2))
+
+
+
+            pkmCurrent = 0
+            pkmData = []
+            for j in range(fileCount):
+                pkmInfo = log.readline().rstrip("\n").split()
+                pkmName = pkmInfo[0]
+                pkmSize = os.path.getsize(f"{outFolder}\\{pkmName}")
+
+                new.write(pkmName.encode(encoding="utf-8"))
+                padding = (256 - (len(pkmName) % 256))
+                new.write(bytes(padding))
+
+
+
+                new.write(_writeint(pkmCurrent, 4))
+
+                new.write(_writeint(pkmSize, 4))
+                
+
+                pkmCurrent = pkmCurrent + pkmSize
+
+                if ((pkmCurrent % 16) == 0):
+                    padding = 0
+                else:
+                    padding = (16 - (pkmCurrent % 16))
+                    
+                pkmCurrent = pkmCurrent + padding
+
+                pkmData.append([pkmName, padding])
+
+            end = new.tell()
+            if ((end % 64) == 0):
+                padding = 0
+            else:
+                padding = (64 - (end % 64))
+            
+            new.write(bytes(padding))
+            
+            for k in range(fileCount):
+                with open(os.path.join(outFolder, _native_path(pkmData[k][0])), "rb") as file:
+                    data = file.read()
+                new.write(data)
+                new.write(bytes(pkmData[k][1]))
+            
+            new.close()
+            
+            oldhash = getHash(os.path.join(outFolder, _native_path(f"{name}.NEW")))
+            newhash = getHash(os.path.join(outFolder, _native_path(f"{name}")))
+
+            if (oldhash == newhash):
+                pass
+            else:
+                print(f"{name} is not rebuilt {oldhash} VS {newhash}")
+
+
         file = open(os.path.join(outFolder, _native_path(name)), "rb")
         data = file.read()
         size = len(data)
 
-        if name.endswith(".PKM") == False:
-            print(name)
-
-
-        else:
-            fileCount = int(fileinfo[1])
-            print(name)
-            for j in range(fileCount):
-                print(log.readline().rstrip("\n"))
-        
         pki.write(name.encode(encoding="utf-8"))
         padding = (256 - (len(name) % 256))
         pki.write(bytes(padding))
@@ -169,3 +232,12 @@ def unpack():
 
 def pack():
     buildDat()
+    print(getHash("DAT.PAK"))
+    print(getHash("extracted\\DAT.PAK"))
+    print(getHash("DAT.PKI"))
+    print(getHash("extracted\\DAT.PKI"))
+
+    if ((getHash("DAT.PAK")) == (getHash("extracted\\DAT.PAK"))):
+        print("same pak")
+    else:
+        print("not same")
