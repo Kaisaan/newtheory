@@ -2,6 +2,7 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #     "pillow",
+#     "ReverseBox",
 # ]
 # ///
 import os
@@ -13,8 +14,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from libnewtheory.archive import unpack
+from scripts.tasks.extract_graphics import extract_all_graphics
+
 
 def main():
+
+
 
     if os.path.exists("extracted"):
         shutil.rmtree("extracted")
@@ -48,6 +53,11 @@ def main():
     print("Unpacking DATA.BIN...")
     unpack()
     print("Done!")
+
+    print("Extracting graphics...")
+    extract_all_graphics()
+    print("Done!")
+
 
 
 if __name__ == "__main__":

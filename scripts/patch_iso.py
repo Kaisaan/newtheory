@@ -4,6 +4,7 @@
 #     "google-api-python-client",
 #     "google-auth",
 #     "pillow",
+#     "ReverseBox"
 # ]
 # ///
 import argparse
@@ -16,6 +17,7 @@ from xml.etree import ElementTree as ET
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 #sys.path.insert(0, str(Path(__file__).resolve().parent))
 from libnewtheory.archive import pack
+from scripts.tasks.update_graphics import insert_all_graphics
 
 
 PATCHED_ISO = "english.iso"
@@ -36,6 +38,9 @@ def generate_translated_xml(in_xml: str, out_xml: str):
 
 def main():
 
+    print("Updating graphics...")
+    insert_all_graphics()
+    print("Done!")
 
     print("Repacking DATA.BIN...")
     pack()
