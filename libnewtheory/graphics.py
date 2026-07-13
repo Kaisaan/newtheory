@@ -140,18 +140,14 @@ def extract_tim2(filepath):
     logFile.close()
 
 
-def extract_graphics(filepath: str | Path, extract_frames: bool = False):
+def extract_graphics(filepath: str | Path):
     """
     Fingerprint the file by its 8-byte identifier and dispatch to the
     matching format-specific extractor. extract_frames is ignored for
     GBXA files (no animation table).
     """
     fmt = fingerprint(filepath)
-    if fmt == "naxa":
-        extract_naxa(filepath, extract_frames)
-    elif fmt == "gbxa":
-        extract_gbxa(filepath)
-    elif fmt == "tim2":
+    if fmt == "tim2":
         extract_tim2(filepath)
     else:
         raise ValueError(f"{filepath}: unknown graphics identifier (not NAXA5010 or GBXA2000)")
@@ -199,9 +195,12 @@ def update_tim2(filepath):
     else:
         exit("other BPP formats not supported yet")
 
-    graphic = Image.open(input_dir / f"{filename}.png", "r")
+    with Image.open(input_dir / f"{filename}.png", "r") as graphic:
+        
+        if graphic.mode != "P":
+            exit(f"{filename}.png has wrong Image mode as {graphic.mode}")
 
-    data = list(graphic.getdata())
+        data = list(graphic.getdata())
 
     binData = b""
     if (bpp == 8):
@@ -220,9 +219,10 @@ def update_tim2(filepath):
             byte = byte2 + byte1
             byte = byte.to_bytes(1)
             binData = binData + byte
+
         if mode == 0x40:
             binData = swizzle_ps2(binData, width, height, bpp, swizzle_type=1)
-    
+            
     newFile.seek(pxlOffset)
     newFile.write(binData)
 
@@ -231,6 +231,8 @@ def update_tim2(filepath):
 
     newFile.seek(clutOffset)
     newFile.write(clut)
+
+    print(f"{filename}_new.TM2 saved!")
 
     newFile.close()
     origFile.close()

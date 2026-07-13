@@ -31,8 +31,8 @@ def generate_translated_xml(in_xml: str, out_xml: str):
     tree = ET.parse(in_xml)
     for elem in tree.iter():
         src = elem.get("source")
-        if src and src.startswith("extracted/"):
-            elem.set("source", "translated/" + src[len("extracted/"):])
+        if src and src.startswith("extracted"):
+            elem.set("source", "translated" + src[len("extracted"):])
     tree.write(out_xml, encoding="utf-8", xml_declaration=True)
 
 

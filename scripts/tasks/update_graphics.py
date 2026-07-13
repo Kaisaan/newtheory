@@ -25,8 +25,8 @@ def copy_tree(src, dst):
             print(f"Copied {item} to {dest_file}")
 
 def insert_all_graphics():
-    """Insert edited graphics back into all _anm.bin files."""
-    print("\nInserting edited graphics into _anm.bin files...")
+    """Insert edited graphics back into all .TM2 files."""
+    print("\nInserting edited graphics into .TM2 files...")
     
     graphics_orig = Path("graphics/orig")
     graphics_processed = Path("graphics/processed")
@@ -45,10 +45,10 @@ def insert_all_graphics():
         else:
             print(f"Warning: {tm2_file} not found, skipping")
     
-    # Copy _new.bin files back to DAT
+    # Copy .TM2 files back to DAT
     print("\nCopying patched graphics back to DAT...")
     for name, dest_path in GRAPHICS_FILES.items():
-        new_file = graphics_orig / f"{name}_new.bin"
+        new_file = graphics_orig / f"{name}_new.TM2"
         if new_file.exists():
             dest = Path(dest_path)
             dest.parent.mkdir(parents=True, exist_ok=True)
