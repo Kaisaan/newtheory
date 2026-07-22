@@ -91,19 +91,18 @@ def extract_tim2(filepath):
     logFile = open(output_dir / f"{filename}.txt", "w", encoding="utf-8")
     logFile.write("tim2\n")
 
-    pxlOffset = _intlit(header[0x14:0x18])      # Just get the needed info from the TIM2 headers
-    clutOffset = _intlit(header[0x18:0x1C])
+    clutOffset = _intlit(header[0x18:0x1C])     # Just get the needed info from the TIM2 headers
     clutOffset = clutOffset + 0x40              # clutOffset doesn't account for header
     clutSize = _intlit(header[0x1E:0x20])
     width = _intlit(header[0x24:0x26])
     height = _intlit(header[0x26:0x28])
-    mode = _intlit(header[0x2A:0x2B])
+    mode = _intlit(header[0x2B:0x2C])
 
     clut, bpp = _read_clut(graphic, output_dir, filename, logFile, clutSize, clutOffset)
 
     dataSize = width * height
 
-    graphic.seek(pxlOffset)
+    graphic.seek(0x40)
 
     if bpp == 4:
         dataSize = dataSize // 2
@@ -112,7 +111,7 @@ def extract_tim2(filepath):
             bin.write(data)
         print(f"{filename}/{filename}_packed.bin saved!")
 
-        if mode == 0x40:        # Very crude check for pixel storage mode (it should be checking a specific bit)
+        if (mode & 0x20) != 0:        # Very crude check for pixel storage mode (it should be checking a specific bit)
             data = unswizzle_ps2(data, width, height, bpp, swizzle_type=1)
             logFile.write(f"Pixel data is swizzled\n")
 
@@ -126,6 +125,7 @@ def extract_tim2(filepath):
 
     else:
         data = graphic.read(dataSize)
+        data = unswizzle_ps2(data, width, height, bpp, swizzle_type=2)
         with open(output_dir / f"{filename}_8bpp.bin", "wb") as bin:
             bin.write(data)
 
@@ -134,7 +134,7 @@ def extract_tim2(filepath):
     sprite.save(fp=output_dir / f"{filename}.png")
     print(f"{filename}/{filename}.png saved!")
 
-    logFile.write(f"{filename}.png is at {pxlOffset:X} its size is {height:X}H by {width:X}W its data size is {dataSize:X} bytes\n")
+    logFile.write(f"{filename}.png has size {height:X}H by {width:X}W its data size is {dataSize:X} bytes\n")
 
     graphic.close()
     logFile.close()
@@ -226,11 +226,15 @@ def update_tim2(filepath):
     newFile.seek(pxlOffset)
     newFile.write(binData)
 
-    with open(input_dir / f"{filename}_orig.pal", "rb") as palFile:
-        clut = palFile.read(clutSize * 4)
+    if bpp != 4:
+        with open(input_dir / f"{filename}_orig.pal", "rb") as palFile:
+            clut = palFile.read(clutSize * 4)
 
-    newFile.seek(clutOffset)
-    newFile.write(clut)
+        newFile.seek(clutOffset)
+        newFile.write(clut)
+    else:
+        pal = list(graphic.getcolors)
+        print(pal)
 
     print(f"{filename}_new.TM2 saved!")
 
