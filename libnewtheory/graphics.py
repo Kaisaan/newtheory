@@ -96,7 +96,7 @@ def extract_tim2(filepath):
     clutSize = _intlit(header[0x1E:0x20])
     width = _intlit(header[0x24:0x26])
     height = _intlit(header[0x26:0x28])
-    mode = _intlit(header[0x2B:0x2C])
+    mode = _intlit(header[0x08:0x09])
 
     clut, bpp = _read_clut(graphic, output_dir, filename, logFile, clutSize, clutOffset)
 
@@ -111,7 +111,7 @@ def extract_tim2(filepath):
             bin.write(data)
         print(f"{filename}/{filename}_packed.bin saved!")
 
-        if (mode & 0x20) != 0:        # Very crude check for pixel storage mode (it should be checking a specific bit)
+        if mode == 0x1:
             data = unswizzle_ps2(data, width, height, bpp, swizzle_type=1)
             logFile.write(f"Pixel data is swizzled\n")
 
@@ -180,13 +180,12 @@ def update_tim2(filepath):
     newFile.seek(0)
     newFile.write(header)
 
-    pxlOffset = _intlit(header[0x14:0x18])      # Just get the needed info from the TIM2 headers
-    clutOffset = _intlit(header[0x18:0x1C])
+    clutOffset = _intlit(header[0x18:0x1C])     # Just get the needed info from the TIM2 headers
     clutOffset = clutOffset + 0x40              # clutOffset doesn't account for header
     clutSize = _intlit(header[0x1E:0x20])
     width = _intlit(header[0x24:0x26])
     height = _intlit(header[0x26:0x28])
-    mode = _intlit(header[0x2A:0x2B])
+    mode = _intlit(header[0x08:0x09])
 
     if (clutSize == 256):
         bpp = 8
@@ -207,6 +206,7 @@ def update_tim2(filepath):
         for i in range(len(data)):
             byte = data[i].to_bytes(1)
             binData = binData + byte
+
     elif (bpp == 4):
         for i in range(0, len(data), 2):
             byte1 = data[i]
@@ -220,21 +220,19 @@ def update_tim2(filepath):
             byte = byte.to_bytes(1)
             binData = binData + byte
 
-        if mode == 0x40:
-            binData = swizzle_ps2(binData, width, height, bpp, swizzle_type=1)
+    if mode == 0x1:
+        binData = swizzle_ps2(binData, width, height, bpp, swizzle_type=1)
             
-    newFile.seek(pxlOffset)
+    newFile.seek(0x40)
     newFile.write(binData)
 
-    if bpp != 4:
-        with open(input_dir / f"{filename}_orig.pal", "rb") as palFile:
-            clut = palFile.read(clutSize * 4)
 
-        newFile.seek(clutOffset)
-        newFile.write(clut)
-    else:
-        pal = list(graphic.getcolors)
-        print(pal)
+    with open(input_dir / f"{filename}_orig.pal", "rb") as palFile:
+        clut = palFile.read(clutSize * 4)
+
+    newFile.seek(clutOffset)
+    newFile.write(clut)
+
 
     print(f"{filename}_new.TM2 saved!")
 
