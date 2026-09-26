@@ -17,6 +17,7 @@ from xml.etree import ElementTree as ET
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 #sys.path.insert(0, str(Path(__file__).resolve().parent))
 from libnewtheory.archive import pack
+from scripts.tasks.compile import compile_script
 from scripts.tasks.update_graphics import insert_all_graphics
 
 
@@ -37,6 +38,16 @@ def generate_translated_xml(in_xml: str, out_xml: str):
 
 
 def main():
+
+    print("Compiling .nscript files into SCRIPT.BIN files...")
+    decompiled_root = Path("decompiled")
+    script_root = Path("DAT/STAGE")
+    for source_path in sorted(decompiled_root.rglob("*.nscript")):
+        relative_path = source_path.relative_to(decompiled_root)
+        output_path = (script_root / relative_path).with_suffix(".BIN")
+        print(f"  {source_path} -> {output_path}")
+        compile_script(source_path, output_path)
+    print("Done!")
 
     print("Updating graphics...")
     insert_all_graphics()
