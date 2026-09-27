@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 
 def _intlit(b: bytes) -> int:
     return int.from_bytes(b, byteorder="little")
@@ -8,15 +8,15 @@ def _writeint(num, size):
 
 PKM_MAGIC = b"xf"
 
-def _native_path(path: str) -> str:
-    return path.replace("\\", os.sep)
+def _native_path(path: str) -> Path:
+    return Path(path.replace("\\", "/"))
 
 def extractDat():
-    pak = open("extracted/DAT.PAK", "rb")
-    pki = open("extracted/DAT.PKI", "rb")
-    log = open("DAT.txt", "w", encoding="utf-8")
+    pak = open(Path("extracted") / "DAT.PAK", "rb")
+    pki = open(Path("extracted") / "DAT.PKI", "rb")
+    log = open(Path("DAT.txt"), "w", encoding="utf-8")
 
-    outFolder = "DAT"
+    outFolder = Path("DAT")
 
     # This could be turned into a separate function to get PKM info
 
@@ -38,8 +38,8 @@ def extractDat():
         filePath = filePath[:filePath.find("\x00")]
         filePath = _native_path(filePath)
 
-        fileName = os.path.split(filePath)[1]
-        fileDir = os.path.split(filePath)[0]
+        fileName = filePath.name
+        fileDir = filePath.parent
 
         offset = _intlit(pki.read(4))
         size = _intlit(pki.read(4))
@@ -47,9 +47,9 @@ def extractDat():
         pak.seek(offset)
         fileData = pak.read(size)
 
-        os.makedirs(os.path.join(outFolder, fileDir), exist_ok=True)
+        (outFolder / fileDir).mkdir(parents=True, exist_ok=True)
 
-        file = open(os.path.join(outFolder, filePath), "w+b")
+        file = open(outFolder / filePath, "w+b")
         file.write(fileData)
 
         file.seek(0)
@@ -57,7 +57,7 @@ def extractDat():
         
         if header == PKM_MAGIC:
             
-            pkm = open(os.path.join(outFolder, filePath), "rb")
+            pkm = open(outFolder / filePath, "rb")
             pkm.seek(0)
             magic = pkm.read(2)    
             unknown1 = _intlit(pkm.read(2))
@@ -97,24 +97,24 @@ def extractDat():
                 
                 pkm.seek(pkmFiles[i][1])
 
-                newFileName = os.path.split(pkmFiles[i][0])[1]
-                newFileDir = os.path.split(pkmFiles[i][0])[0]
+                newFileName = pkmFiles[i][0].name
+                newFileDir = pkmFiles[i][0].parent
 
-                os.makedirs(os.path.join(outFolder, newFileDir), exist_ok=True)
+                (outFolder / newFileDir).mkdir(parents=True, exist_ok=True)
 
                 newFileData = pkm.read(pkmFiles[i][3])
 
-                newFile = open(os.path.join(outFolder, newFileDir, newFileName), "wb")
+                newFile = open(outFolder / newFileDir / newFileName, "wb")
                 newFile.write(newFileData)
 
         else:
             log.write(f"{filePath} {offset} {size}\n")
 
 def buildDat():
-    log = open("DAT.txt", "r", encoding="utf-8")
-    pak = open("translated\\DAT.PAK", "w+b")
-    pki = open("translated\\DAT.PKI", "w+b")
-    outFolder = "DAT"
+    log = open(Path("DAT.txt"), "r", encoding="utf-8")
+    pak = open(Path("translated") / "DAT.PAK", "w+b")
+    pki = open(Path("translated") / "DAT.PKI", "w+b")
+    outFolder = Path("DAT")
     current = 0
 
     pkiInfo = log.readline().split()
@@ -133,7 +133,7 @@ def buildDat():
         if name.endswith(".PKM") == True:
 
             fileCount = int(fileinfo[1])
-            new = open(os.path.join(outFolder, _native_path(f"{name}")), "w+b")
+            new = open(outFolder / _native_path(f"{name}"), "w+b")
             new.write(PKM_MAGIC)
             new.write(_writeint(int(fileinfo[4]), 2))
             new.write(_writeint(fileCount, 4))
@@ -148,7 +148,7 @@ def buildDat():
             for j in range(fileCount):
                 pkmInfo = log.readline().rstrip("\n").split()
                 pkmName = pkmInfo[0]
-                pkmSize = os.path.getsize(f"{outFolder}\\{pkmName}")
+                pkmSize = (outFolder / _native_path(pkmName)).stat().st_size
 
                 new.write(pkmName.encode(encoding="utf-8"))
                 padding = (256 - (len(pkmName) % 256))
@@ -179,7 +179,7 @@ def buildDat():
             new.write(bytes(padding))
             
             for k in range(fileCount):
-                with open(os.path.join(outFolder, _native_path(pkmData[k][0])), "rb") as file:
+                with open(outFolder / _native_path(pkmData[k][0]), "rb") as file:
                     data = file.read()
                 new.write(data)
                 new.write(bytes(pkmData[k][1]))
@@ -189,7 +189,7 @@ def buildDat():
             
 
 
-        file = open(os.path.join(outFolder, _native_path(name)), "rb")
+        file = open(outFolder / _native_path(name), "rb")
         data = file.read()
         size = len(data)
 
