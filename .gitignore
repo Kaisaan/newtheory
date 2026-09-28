@@ -8,11 +8,11 @@ newtheory.xml
 translated.xml
 newtheory_secret.json
 newtheory.iso
+english.iso
 DATA.txt
 extracted/
 /DATA/
 DAT.txt
-/DAT/
 translated/
 decompiled/
 /csv/
@@ -20,3 +20,4 @@ decompiled/
 graphics/orig
 graphics/edited
 asm/strings.asm
+DAT/
