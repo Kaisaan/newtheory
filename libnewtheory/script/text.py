@@ -5,6 +5,24 @@ from dataclasses import dataclass
 from typing import Literal
 
 
+def fix_ascii(text: str) -> str:
+    """Normalize translation punctuation to the game's supported characters."""
+    return (
+        text.replace("，", ",")
+        .replace("！", "!")
+        .replace("〜", "~")
+        .replace("＆", "&")
+        .replace("＋", "+")
+        .replace("’", "'")
+        .replace("‘", "'")
+        .replace("“", '"')
+        .replace("”", '"')
+        .replace("—", "ー")
+        .replace("–", "ー")
+        .replace("―", "ー")
+    )
+
+
 @dataclass(frozen=True)
 class TextControl:
     kind: Literal["size", "color", "sleep"]

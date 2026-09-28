@@ -11,6 +11,9 @@ PKM_MAGIC = b"xf"
 def _native_path(path: str) -> Path:
     return Path(path.replace("\\", "/"))
 
+def _archive_path(path: str) -> bytes:
+    return path.replace("/", "\\").encode("utf-8")
+
 def extractDat():
     pak = open(Path("extracted") / "DAT.PAK", "rb")
     pki = open(Path("extracted") / "DAT.PKI", "rb")
@@ -150,7 +153,7 @@ def buildDat():
                 pkmName = pkmInfo[0]
                 pkmSize = (outFolder / _native_path(pkmName)).stat().st_size
 
-                new.write(pkmName.encode(encoding="utf-8"))
+                new.write(_archive_path(pkmName))
                 padding = (256 - (len(pkmName) % 256))
                 new.write(bytes(padding))
 
@@ -193,7 +196,7 @@ def buildDat():
         data = file.read()
         size = len(data)
 
-        pki.write(name.encode(encoding="utf-8"))
+        pki.write(_archive_path(name))
         padding = (256 - (len(name) % 256))
         pki.write(bytes(padding))
 
